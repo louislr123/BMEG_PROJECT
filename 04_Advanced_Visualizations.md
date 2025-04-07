@@ -1,6 +1,6 @@
 04_Advanced_Visualizations
 ================
-Your Name
+Jack Chiang, Louis Lax-Roseman
 2025-04-02
 
 1.  Introduction

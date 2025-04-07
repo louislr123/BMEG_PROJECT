@@ -20,7 +20,9 @@ This document outlines the RNA-seq data processing pipeline for Marchantia polym
     Summarizing alignment logs.
 
 Adjust file paths and sample names as needed for your environment.
+
 2. Data Preparation and Quality Control
+
 2.1. Locating Raw FASTQ Files
 
 Assume your raw FASTQ files (e.g., IM_Tak1_1.fastq, IM_Tak1_2.fastq, etc.) are located in data/raw_fastq/.
@@ -68,6 +70,7 @@ STAR --runThreadN 8 \
      --sjdbOverhang 99
 
 ```
+
 3.2. Aligning Trimmed Reads
 
 Below is an example alignment command for one sample (IM_Tak1):
@@ -85,6 +88,7 @@ STAR --runThreadN 8 \
 
 ```
 Repeat for all samples to generate sorted BAM files and alignment log files.
+
 3.3. Summarizing STAR Alignment Logs
 
 The following R code reads STAR log files and extracts basic metrics.
@@ -129,6 +133,7 @@ ggplot(star_log_data, aes(x = sample, y = uniquely_mapped_reads, fill = sample))
   labs(title = "Uniquely Mapped Reads per Sample", x = "Sample", y = "Uniquely Mapped Reads")
 
 ```
+
 4. Conclusions
 
 The outputs from this pipeline (BAM files, QC reports, and alignment summaries) will be used in downstream analyses (TF annotation, expression analysis, and advanced plots) in subsequent R Markdown documents.

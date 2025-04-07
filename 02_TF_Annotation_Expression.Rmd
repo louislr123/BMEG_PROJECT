@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALS
 This document imports transcript quantifications from Salmon, annotates genes using a reference GTF and PlantTFDB, and summarizes transcription factor (TF) families with basic plots.
 
 2. Building the Expression Matrix
+
 2.1. Importing Salmon Quantifications
 
 ```{r}
@@ -32,6 +33,7 @@ txi_tx <- tximport(files, type = "salmon", txOut = TRUE)
 head(txi_tx$abundance)
 
 ```
+
 
 2.2. Creating a Transcript-to-Gene Map
 ```{r}
@@ -76,6 +78,7 @@ if (exists("expression_matrix")) {
 }
 
 ```
+
 4. Summarizing TF Families
 ```{r}
 library(dplyr)
@@ -104,6 +107,7 @@ ggplot(tf_family_counts, aes(x = reorder(Family, -Count), y = Count)) +
 
 
 ```
+
 5. (Optional) Basic Expression Patterns
 
 ```{r}
@@ -122,6 +126,7 @@ ggplot(long_tf_exp, aes(x = Family, y = TPM)) +
   labs(title = "TF Expression Levels Across Samples", x = "TF Family", y = "TPM")
 
 ```
+
 6. Conclusions / Next Steps
 
 This document covers the import of Salmon quantifications, transcript-to-gene mapping, TF annotation, and basic TF family summaries. 

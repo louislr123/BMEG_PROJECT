@@ -14,8 +14,11 @@ Marchantia polymorpha. The steps include:
 
     Summarizing alignment logs.
 
-Adjust file paths and sample names as needed for your environment. 2.
-Data Preparation and Quality Control 2.1. Locating Raw FASTQ Files
+Adjust file paths and sample names as needed for your environment.
+
+2.  Data Preparation and Quality Control
+
+2.1. Locating Raw FASTQ Files
 
 Assume your raw FASTQ files (e.g., IM_Tak1_1.fastq, IM_Tak1_2.fastq,
 etc.) are located in data/raw_fastq/. 2.2. Trimming and Filtering with
@@ -85,7 +88,9 @@ STAR --runThreadN 8 \
 ```
 
 Repeat for all samples to generate sorted BAM files and alignment log
-files. 3.3. Summarizing STAR Alignment Logs
+files.
+
+3.3. Summarizing STAR Alignment Logs
 
 The following R code reads STAR log files and extracts basic metrics.
 

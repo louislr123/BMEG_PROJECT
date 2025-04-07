@@ -85,6 +85,7 @@ if(nrow(sig_go_terms) > 0){
 
 
 ```
+
 3. Upset Plot for TF Presence/Absence
 ```{r}
 library(ComplexHeatmap)
@@ -129,6 +130,7 @@ UpSet(comb_mat,
       row_title = NULL)
 
 ```
+
 4. Advanced Visualizations: PCA and Correlation Analysis
 
 ```{r}

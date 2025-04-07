@@ -9,7 +9,9 @@ This document imports transcript quantifications from Salmon, annotates
 genes using a reference GTF and PlantTFDB, and summarizes transcription
 factor (TF) families with basic plots.
 
-2.  Building the Expression Matrix 2.1. Importing Salmon Quantifications
+2.  Building the Expression Matrix
+
+2.1. Importing Salmon Quantifications
 
 ``` r
 library(tximport)

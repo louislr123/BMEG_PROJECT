@@ -1,6 +1,6 @@
 ---
 title: "04_Advanced_Visualizations"
-author: "Your Name"
+author: "Jack Chiang, Louis Lax-Roseman"
 date: "2025-04-02"
 output: github_document
 ---
@@ -23,6 +23,7 @@ In this document we generate advanced visualizations to explore transcription fa
 
     Hierarchical clustering heatmaps.
   
+
 2. Clustered Stacked Bar Plot for TF Family Distribution
 
 ```{r}
