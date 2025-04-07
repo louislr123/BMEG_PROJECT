@@ -136,12 +136,11 @@ ggplot(star_log_data, aes(x = sample, y = uniquely_mapped_reads, fill = sample))
   labs(title = "Uniquely Mapped Reads per Sample", x = "Sample", y = "Uniquely Mapped Reads")
 ```
 
-4.  Conclusions
+4.  Next steps
 
 The outputs from this pipeline (BAM files, QC reports, and alignment
 summaries) will be used in downstream analyses (TF annotation,
-expression analysis, and advanced plots) in subsequent R Markdown
-documents. How to Use This Document
+expression analysis, and advanced plots) in subsequent Rmd documents.
 
 # References
 

@@ -118,12 +118,6 @@ ggplot(long_tf_exp, aes(x = Family, y = TPM)) +
   labs(title = "TF Expression Levels Across Samples", x = "TF Family", y = "TPM")
 ```
 
-6.  Conclusions / Next Steps
-
-This document covers the import of Salmon quantifications,
-transcript-to-gene mapping, TF annotation, and basic TF family
-summaries.
-
 # References
 
 - Patro, R. et al. (2017). Salmon provides fast and bias-aware
