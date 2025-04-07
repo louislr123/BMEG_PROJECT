@@ -1,17 +1,13 @@
----
-title: "04_Advanced_Visualizations"
-author: "Your Name"
-date: "2025-04-02"
-output: github_document
----
+04_Advanced_Visualizations
+================
+Your Name
+2025-04-02
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
-```
+1.  Introduction
 
-1. Introduction
-
-In this document we generate advanced visualizations to explore transcription factor (TF) family distributions and expression across species. The analyses include:
+In this document we generate advanced visualizations to explore
+transcription factor (TF) family distributions and expression across
+species. The analyses include:
 
     Clustered stacked bar plots for TF family distributions.
 
@@ -22,47 +18,43 @@ In this document we generate advanced visualizations to explore transcription fa
     A correlation network of TF families.
 
     Hierarchical clustering heatmaps.
-  
-2. Clustered Stacked Bar Plot for TF Family Distribution
 
-```{r}
+2.  Clustered Stacked Bar Plot for TF Family Distribution
+
+``` r
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(colorspace)
-
-
 ```
 
 Load TF family summary data (adjust file path as needed):
 
-```{r}
+``` r
 tf_summary <- read.delim("data/tf_family_summary.tsv", sep = "\t", header = TRUE)
-
 ```
 
 Pivot data into long format for plotting:
 
-```{r}
+``` r
 stacked_data <- tf_summary %>%
   select(TF_Family, Cre, Mpo, Ppa, Smo, Pab, Ath, Zma) %>%
   pivot_longer(cols = c(Cre, Mpo, Ppa, Smo, Pab, Ath, Zma),
                names_to = "Species",
                values_to = "Gene_Count")
-
 ```
 
 Generate a custom color palette:
 
-```{r}
+``` r
 n_colors <- 15
 my_palette <- rainbow_hcl(n_colors, c = 60, l = 70)
 my_palette <- sample(my_palette, n_colors)
-
 ```
+
 Create the stacked bar plot:
 
-```{r}
+``` r
 ggplot(stacked_data, aes(x = Species, y = Percentage, fill = TF_Family)) +
   geom_bar(stat = "identity") +
   facet_grid(. ~ Species, scales = "free_x") +
@@ -71,21 +63,20 @@ ggplot(stacked_data, aes(x = Species, y = Percentage, fill = TF_Family)) +
        x = "Species", y = "Percentage (%)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_manual(values = my_palette)
-
 ```
 
-3. Normalized Heatmap of TF Family Abundance
+3.  Normalized Heatmap of TF Family Abundance
 
-```{r}
+``` r
 library(pheatmap)
 library(viridis)
 library(tibble)
-
-
 ```
-Assume tf_summary has TF_Family and species columns (Cre, Mpo, Ppa, Smo, Pab, Ath, Zma):
 
-```{r}
+Assume tf_summary has TF_Family and species columns (Cre, Mpo, Ppa, Smo,
+Pab, Ath, Zma):
+
+``` r
 species_cols <- c("Cre", "Mpo", "Ppa", "Smo", "Pab", "Ath", "Zma")
 species_totals <- colSums(tf_summary[, species_cols])
 
@@ -96,10 +87,11 @@ norm_data <- tf_summary %>%
 for(col in species_cols) {
   norm_data[, col] <- norm_data[, col] / species_totals[col] * 100
 }
-
 ```
+
 Create the normalized heatmap:
-```{r}
+
+``` r
 pheatmap(as.matrix(norm_data),
          display_numbers = TRUE,
          number_format = "%.1f%%",
@@ -107,18 +99,17 @@ pheatmap(as.matrix(norm_data),
          main = "Normalized TF Family Abundance Across Species",
          fontsize = 12,
          fontsize_number = 10)
-
 ```
 
-4. Improved PCA Biplot for TF Family Expression
-```{r}
+4.  Improved PCA Biplot for TF Family Expression
+
+``` r
 library(ggrepel)
-
-
 ```
 
 Use tf_summary for PCA (rows = TF families, columns = species counts):
-```{r}
+
+``` r
 pca_data <- tf_summary %>%
   select(TF_Family, all_of(species_cols)) %>%
   column_to_rownames("TF_Family") %>%
@@ -127,11 +118,11 @@ pca_data <- tf_summary %>%
 pca_result <- prcomp(pca_data, scale. = TRUE)
 pca_df <- as.data.frame(pca_result$x)
 pca_df$Species <- rownames(pca_df)
-
-
 ```
+
 Extract loadings and calculate contributions:
-```{r}
+
+``` r
 loadings <- pca_result$rotation
 loadings_df <- as.data.frame(loadings)
 loadings_df$TF_Family <- rownames(loadings_df)
@@ -143,12 +134,11 @@ loadings_df$total_contrib <- loadings_df$PC1_contrib + loadings_df$PC2_contrib
 loadings_plot <- loadings_df %>% filter(PC1_contrib > 0.03 | PC2_contrib > 0.03)
 loadings_plot$is_strong <- loadings_plot$total_contrib > median(loadings_plot$total_contrib)
 scaling_factor <- 6
-
-
 ```
 
 Base PCA plot:
-```{r}
+
+``` r
 p1 <- ggplot() +
   geom_point(data = pca_df, aes(x = PC1, y = PC2, color = Species), size = 4) +
   geom_text_repel(data = pca_df, aes(x = PC1, y = PC2, label = Species), size = 3) +
@@ -156,11 +146,11 @@ p1 <- ggplot() +
   labs(x = paste0("PC1 (", round(summary(pca_result)$importance[2,1]*100, 1), "%)"),
        y = paste0("PC2 (", round(summary(pca_result)$importance[2,2]*100, 1), "%)"),
        title = "PCA Biplot of TF Family Expression")
-
 ```
 
 Add arrows for loadings:
-```{r}
+
+``` r
 p_biplot <- p1 +
   geom_segment(data = loadings_plot,
                aes(x = 0, y = 0, xend = PC1 * scaling_factor, yend = PC2 * scaling_factor, size = total_contrib),
@@ -173,21 +163,19 @@ p_biplot <- p1 +
                   box.padding = 0.5,
                   color = "black")
 p_biplot
-
-
 ```
 
+5.  Correlation Network of TF Families
 
-
-5. Correlation Network of TF Families
-
-```{r}
+``` r
 library(igraph)
 library(ggraph)
-
 ```
-Calculate correlation between TF families across species using the transposed normalized data:
-```{r}
+
+Calculate correlation between TF families across species using the
+transposed normalized data:
+
+``` r
 tf_cor <- cor(t(as.matrix(norm_data)), method = "spearman")
 rownames(tf_cor) <- rownames(norm_data)
 colnames(tf_cor) <- rownames(norm_data)
@@ -205,15 +193,13 @@ set.seed(123)  # For reproducibility
 plot(graph, vertex.size = 20, vertex.label.color = "black",
      vertex.color = "lightblue", vertex.frame.color = "gray",
      vertex.label.cex = 0.8, edge.curved = 0.2, layout = layout_with_fr(graph))
-
-
 ```
 
-6. Hierarchical Clustering Heatmap
+6.  Hierarchical Clustering Heatmap
 
 Save the clustered heatmap as a PNG file:
 
-```{r}
+``` r
 png("TF_combined_clustered_heatmap.png", width = 1200, height = 1000, res = 150)
 pheatmap(as.matrix(norm_data),
          display_numbers = TRUE,
@@ -226,12 +212,11 @@ pheatmap(as.matrix(norm_data),
          clustering_distance_cols = "euclidean",
          clustering_method = "ward.D2")
 dev.off()
-
-
 ```
 
 # References
+
 - Kolde, R. (2019). pheatmap: Pretty Heatmaps. R package version 1.0.12.
 - Jolliffe, I. T. (2002). Principal Component Analysis. Springer.
-- Csardi, G. & Nepusz, T. (2006). The igraph software package for complex network research.
-
+- Csardi, G. & Nepusz, T. (2006). The igraph software package for
+  complex network research.

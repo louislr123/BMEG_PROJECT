@@ -1,17 +1,12 @@
----
-title: "01_RNAseq_QC_and_Alignment"
-author: "Jack Chiang, Louis Lax-Roseman"
-date: "2025-04-04"
-output: github_document
----
+01_RNAseq_QC_and_Alignment
+================
+Jack Chiang, Louis Lax-Roseman
+2025-04-04
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
-```
+1.  Introduction
 
-1. Introduction
-
-This document outlines the RNA-seq data processing pipeline for Marchantia polymorpha. The steps include:
+This document outlines the RNA-seq data processing pipeline for
+Marchantia polymorpha. The steps include:
 
     Quality Control (QC): using fastp, FastQC, and MultiQC.
 
@@ -19,16 +14,17 @@ This document outlines the RNA-seq data processing pipeline for Marchantia polym
 
     Summarizing alignment logs.
 
-Adjust file paths and sample names as needed for your environment.
-2. Data Preparation and Quality Control
-2.1. Locating Raw FASTQ Files
+Adjust file paths and sample names as needed for your environment. 2.
+Data Preparation and Quality Control 2.1. Locating Raw FASTQ Files
 
-Assume your raw FASTQ files (e.g., IM_Tak1_1.fastq, IM_Tak1_2.fastq, etc.) are located in data/raw_fastq/.
-2.2. Trimming and Filtering with fastp
+Assume your raw FASTQ files (e.g., IM_Tak1_1.fastq, IM_Tak1_2.fastq,
+etc.) are located in data/raw_fastq/. 2.2. Trimming and Filtering with
+fastp
 
-The following shell command demonstrates how to trim a paired-end sample using fastp. Adjust sample names and paths accordingly.
+The following shell command demonstrates how to trim a paired-end sample
+using fastp. Adjust sample names and paths accordingly.
 
-```{r}
+``` r
 fastp \
   -i data/raw_fastq/IM_Tak1_1.fastq \
   -I data/raw_fastq/IM_Tak1_2.fastq \
@@ -39,39 +35,43 @@ fastp \
   --html data/fastp_processed/IM_Tak1_fastp.html
 ```
 
-Repeat the above command for other samples (e.g., IM_Tak2, M_Tak1, etc.).
+Repeat the above command for other samples (e.g., IM_Tak2, M_Tak1,
+etc.).
 
 2.3. Running FastQC and MultiQC
 
 After trimming, run FastQC on the filtered FASTQ files:
 
-```{r}
+``` r
 fastqc data/fastp_processed/*_R1.filt.fastq data/fastp_processed/*_R2.filt.fastq -o data/fastqc_processed/
 ```
 
 Then, combine the FastQC reports with MultiQC:
-```{r}
-multiqc data/fastqc_processed/ -o data/multiqc_processed/
 
+``` r
+multiqc data/fastqc_processed/ -o data/multiqc_processed/
 ```
-MultiQC will generate a comprehensive report (e.g., multiqc_report.html).
-3. Alignment with STAR
-3.1. Genome Index Generation
+
+MultiQC will generate a comprehensive report (e.g.,
+multiqc_report.html). 3. Alignment with STAR 3.1. Genome Index
+Generation
 
 If a STAR index has not yet been built, run:
-```{r}
+
+``` r
 STAR --runThreadN 8 \
      --runMode genomeGenerate \
      --genomeDir data/star_index \
      --genomeFastaFiles data/reference/MpTak1v5.1.fasta \
      --sjdbGTFfile data/reference/MpTak1v5.1_r1.gtf \
      --sjdbOverhang 99
-
 ```
+
 3.2. Aligning Trimmed Reads
 
 Below is an example alignment command for one sample (IM_Tak1):
-```{r}
+
+``` r
 STAR --runThreadN 8 \
      --genomeDir data/star_index \
      --readFilesIn data/fastp_processed/IM_Tak1_R1.filt.fastq \
@@ -82,13 +82,14 @@ STAR --runThreadN 8 \
      --quantMode GeneCounts \
      --outSAMtype BAM SortedByCoordinate \
      --outReadsUnmapped Fastx
-
 ```
-Repeat for all samples to generate sorted BAM files and alignment log files.
-3.3. Summarizing STAR Alignment Logs
+
+Repeat for all samples to generate sorted BAM files and alignment log
+files. 3.3. Summarizing STAR Alignment Logs
 
 The following R code reads STAR log files and extracts basic metrics.
-```{r}
+
+``` r
 library(dplyr)
 library(readr)
 
@@ -117,26 +118,30 @@ extract_star_metrics <- function(file) {
 
 star_log_data <- do.call(rbind, lapply(log_files, extract_star_metrics))
 print(star_log_data)
-
 ```
+
 Generate a bar plot to visualize uniquely mapped reads per sample:
-```{r}
+
+``` r
 library(ggplot2)
 
 ggplot(star_log_data, aes(x = sample, y = uniquely_mapped_reads, fill = sample)) +
   geom_bar(stat = "identity") +
   theme_minimal() +
   labs(title = "Uniquely Mapped Reads per Sample", x = "Sample", y = "Uniquely Mapped Reads")
-
 ```
-4. Conclusions
 
-The outputs from this pipeline (BAM files, QC reports, and alignment summaries) will be used in downstream analyses (TF annotation, expression analysis, and advanced plots) in subsequent R Markdown documents.
-How to Use This Document
+4.  Conclusions
 
+The outputs from this pipeline (BAM files, QC reports, and alignment
+summaries) will be used in downstream analyses (TF annotation,
+expression analysis, and advanced plots) in subsequent R Markdown
+documents. How to Use This Document
 
 # References
-- Andrews, S. (2010). FastQC: a quality control tool for high throughput sequence data.
-- Chen, S. et al. (2018). fastp: an ultra-fast all-in-one FASTQ preprocessor.
-- Dobin, A. et al. (2013). STAR: ultrafast universal RNA-seq aligner.
-    
+
+- Andrews, S. (2010). FastQC: a quality control tool for high throughput
+  sequence data.
+- Chen, S. et al. (2018). fastp: an ultra-fast all-in-one FASTQ
+  preprocessor.
+- Dobin, A. et al. (2013). STAR: ultrafast universal RNA-seq aligner.

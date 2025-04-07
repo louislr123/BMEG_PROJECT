@@ -1,22 +1,17 @@
----
-title: "02_TF_Annotation_Expression"
-author: "Jack Chiang, Louis Lax-Roseman"
-date: "2025-04-02"
-output: github_document
----
+02_TF_Annotation_Expression
+================
+Jack Chiang, Louis Lax-Roseman
+2025-04-02
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
-```
+1.  Introduction
 
-1. Introduction
+This document imports transcript quantifications from Salmon, annotates
+genes using a reference GTF and PlantTFDB, and summarizes transcription
+factor (TF) families with basic plots.
 
-This document imports transcript quantifications from Salmon, annotates genes using a reference GTF and PlantTFDB, and summarizes transcription factor (TF) families with basic plots.
+2.  Building the Expression Matrix 2.1. Importing Salmon Quantifications
 
-2. Building the Expression Matrix
-2.1. Importing Salmon Quantifications
-
-```{r}
+``` r
 library(tximport)
 library(readr)
 library(dplyr)
@@ -30,11 +25,11 @@ names(files) <- samples
 # Import transcript-level quantifications
 txi_tx <- tximport(files, type = "salmon", txOut = TRUE)
 head(txi_tx$abundance)
-
 ```
 
 2.2. Creating a Transcript-to-Gene Map
-```{r}
+
+``` r
 library(GenomicFeatures)
 
 # Path to reference GTF file (adjust as needed)
@@ -50,19 +45,18 @@ write.csv(tx2gene, "data/tx2gene.csv", row.names = FALSE)
 
 If the file tx2gene.csv is available, import gene-level quantifications:
 
-
-```{r}
+``` r
 if (file.exists("data/tx2gene.csv")) {
   tx2gene <- read.csv("data/tx2gene.csv")
   txi_gene <- tximport(files, type = "salmon", tx2gene = tx2gene)
   expression_matrix <- as.data.frame(txi_gene$abundance)
   head(expression_matrix)
 }
-
 ```
 
-3. Merging TF Annotations
-```{r}
+3.  Merging TF Annotations
+
+``` r
 # Load PlantTFDB data for M. polymorpha (assumes file "Mpo_TF_list.txt" with columns Gene_ID and Family)
 marchantia_tfs <- read.delim("data/Mpo_TF_list.txt", sep = "\t", header = TRUE)
 head(marchantia_tfs)
@@ -74,10 +68,11 @@ if (exists("expression_matrix")) {
                          by.x = "GeneID", by.y = "Gene_ID", all.x = TRUE)
   head(tf_expression)
 }
-
 ```
-4. Summarizing TF Families
-```{r}
+
+4.  Summarizing TF Families
+
+``` r
 library(dplyr)
 
 tf_only <- tf_expression %>% filter(!is.na(Family))
@@ -89,11 +84,11 @@ tf_family_counts <- tf_only %>%
   summarize(Count = n_distinct(GeneID)) %>%
   arrange(desc(Count))
 knitr::kable(tf_family_counts, caption = "TF Family Counts in Marchantia Polymorpha")
-
 ```
 
 4.3. Basic Bar Chart of TF Family Distribution
-```{r}
+
+``` r
 library(ggplot2)
 
 ggplot(tf_family_counts, aes(x = reorder(Family, -Count), y = Count)) +
@@ -101,12 +96,11 @@ ggplot(tf_family_counts, aes(x = reorder(Family, -Count), y = Count)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Distribution of TF Families in Marchantia", x = "TF Family", y = "Gene Count")
-
-
 ```
-5. (Optional) Basic Expression Patterns
 
-```{r}
+5.  (Optional) Basic Expression Patterns
+
+``` r
 library(tidyr)
 
 long_tf_exp <- tf_only %>%
@@ -120,14 +114,19 @@ ggplot(long_tf_exp, aes(x = Family, y = TPM)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "TF Expression Levels Across Samples", x = "TF Family", y = "TPM")
-
 ```
-6. Conclusions / Next Steps
 
-This document covers the import of Salmon quantifications, transcript-to-gene mapping, TF annotation, and basic TF family summaries. 
+6.  Conclusions / Next Steps
+
+This document covers the import of Salmon quantifications,
+transcript-to-gene mapping, TF annotation, and basic TF family
+summaries.
 
 # References
-- Patro, R. et al. (2017). Salmon provides fast and bias-aware quantification of transcript expression.
-- Lawrence, M. et al. (2013). Software for Computing and Annotating Genomic Ranges.
-- Jin, J. et al. (2017). PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants.
 
+- Patro, R. et al. (2017). Salmon provides fast and bias-aware
+  quantification of transcript expression.
+- Lawrence, M. et al. (2013). Software for Computing and Annotating
+  Genomic Ranges.
+- Jin, J. et al. (2017). PlantTFDB 4.0: toward a central hub for
+  transcription factors and regulatory interactions in plants.
