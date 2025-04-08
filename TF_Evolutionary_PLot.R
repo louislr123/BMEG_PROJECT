@@ -297,7 +297,7 @@ header_plot <- ggplot() +
     linetype = "dashed",
     linewidth = 0.5
   ) +
-  # Super-group text (with "Lycophytes" now included)
+  # Super-group text (with "Lycophytes" included)
   geom_text(
     data = super_group_boundaries,
     aes(x = center_x, y = 0.7, label = super_group),
