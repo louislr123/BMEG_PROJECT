@@ -1,0 +1,328 @@
+---
+title: "BMEG 524 Project"
+author: "Jack Chiang, Louis Lax-Roseman"
+date: "2025-04-02"
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    extra_dependencies: ["microtype", "unicode-math"]
+    latex_engine: xelatex
+    highlight: pygments
+geometry: margin=1in
+fontsize: 11pt
+header-includes:
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{minted}
+  - \setminted{breaklines, breakanywhere}
+  - \usepackage{fvextra}
+  - \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines, breakanywhere}
+---
+
+```{=latex}
+\newpage
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+More than 400 million years ago, plants evolved from algae to land plant
+lineages, where they started to survive on land (Weng & Chapple, 2010).
+During the evolution process, the genetic composition has varied
+drastically such that land plants can adapt and survive in a different
+environments (Panchy, Lehti-Shiu & Shiu, 2016). Transcription factors
+(TF) followed such changes in order to allow the plant to adapt and
+survive (Movahedi, Kadkhodaei & Yang, 2024). As plant species from
+different lineages were used as model organisms, researchers were
+gaining knowledge in the evolution pathway of TFs, yet, there was still
+missing linkage between the green algae lineage and the land plants.
+
+In 2013, Sharma, Bhalla, & Singh first used *Marchantia polymorpha* (*M.
+polymorpha*), which is a liverwort, to perform RNA-sequencing (RNA-seq),
+hoping to find the TF families present in different stages in liverwort
+(Sharma ,Bhalla, & Singh, 2013). Liverworts are plants which
+first colonized land (Bowman et al., 2022). Being one of the earliest
+land plant lineages, it can thus be considered as one of the most
+ancient land plant lineages to elucidate the evolution to land plants,
+connecting the missing linkage between green algaes and land plants.
+After analysing the RNA-seq data, Sharma, Bhalla, & Singh compared the
+number and grouping of TF to other plant lineages so as to discover the
+evolution of TF families. They discovered that there are a number of TFs
+which are unique to land plants. On top of that, several TFs such as SAP
+only emerged in ferns and seed plants (Sharma ,Bhalla, & Singh,
+2013). This revealed the evolution of TF families as well as
+their impact in adapting to the local environment when withstanding
+diverse stresses. They further confirmed the role of transcription
+through looking at the roles of various transcriptional factors during
+the development in *M. polymorpha*. Despite the novel discoveries of the
+evolutionary role of TF families, there were a few flaws which could be
+further improved. As more and more researchers investigate *M.polymorpha*, 
+the whole genome sequencing of *M. polymorpha* has already
+been performed. Instead of using *de novo* assembly, we sought to map
+with the existing genome of *M. polymorpha* to increase the accuracy of
+the transcriptome from this data. On top of that, more downstream
+analysis can be performed to further provide evidence to support the
+significance of certain evolutions of TF families.
+
+In this project, we reanalyzed the data set obtained from six different
+stages of *M. polymorpha*, including male plants in immature
+reproductive stage (IM_Tak1); female plants in immature reproductive
+stage (IM_Tak2); male plants in mature reproductive stage (M_Tak1);
+female plants in mature reproductive stage (M_Tak2); male plant in
+vegetative stage (V_Tak1); and female plants in vegetative stage
+(V_Tak2). We used a more robust reference genome for increasing
+accuracy, and performing more thorough downstream analysis including
+cross species comparison of TF families and GO-analysis. We hope to
+discover more information from this dataset such that we can further
+elucidate the functions of various TF families and their evolutionary
+relationship along the green lineage.
+
+Our analysis aims to determine whether reference-based alignment
+improves transcript quantification compared to de novo assembly and to
+explore how TF family composition changes across developmental stages of
+*M. polymorpha*.
+
+## Scope of the Re-analysis
+
+In this project, we re-analyze the dataset obtained from six different
+developmental stages of *M. polymorpha*, but with several key
+improvements:
+
+1.  **Reference-based alignment**: Instead of using de novo assembly, we
+    map reads to the existing *Marchantia* reference genome to increase
+    the accuracy of transcriptome analysis.
+
+2.  **Updated transcription factor classification**: We utilize the most
+    recent version of PlantTFDB database to identify and classify
+    transcription factors.
+
+3.  **Extended downstream analyses**: We perform additional analyses
+    including gene ontology (GO) enrichment and expression pattern
+    clustering to further explore the relationships of various
+    transcription factor families.
+# Method
+
+## RNA-Seq Analysis
+
+RNA-seq data from different stages and sexes of *M. polymorpha* were downloaded from SRA accession SRP029610 (Sharma, Bhalla, & Singh, 2013). Raw sequencing reads were first processed by trimming adapters using fastp v0.12.4 (Chen et al., 2018). The reads were then aligned to the *M. polymorpha* genome; the genome and GTF files were obtained from the *M. polymorpha* Tak-1 reference genome v5.1 revision 1 available at marchantia.info (https://marchantia.info) (Wang et al., 2023). The alignment and annotation were performed with STAR 2.7.9a (Dobin et al., 2013), using the following arguments:
+
+> “--runMode alignReads --outFilterMultimapNmax 10 --outFilterMismatchNoverLmax 0.05 --quantMode GeneCounts --outSAMtype BAM SortedByCoordinate --outReadsUnmapped Fastx”
+
+### Choice of Parameters
+
+- **--outFilterMultimapNmax 10:**  
+  This parameter allows up to 10 multiple alignments per read. It was selected due to the high repetitive content in plant genomes, ensuring that reads from conserved gene families are not discarded unnecessarily. This helps retain data from genes that are part of large, conserved families.
+
+- **--outFilterMismatchNoverLmax 0.05:**  
+  This setting limits the number of allowable mismatches relative to the read length, ensuring high-confidence alignments while accommodating natural genetic variation.
+
+- **--quantMode GeneCounts:**  
+  This option applies gene count quantification during alignment, providing a streamlined workflow in which read counts are directly associated with genomic features.
+
+Transcript quantification, expressed in transcripts per million (TPM), was performed using the salmon v1.10.1 tool on the trimmed reads from fastp v0.12.4 (Patro et al., 2017). The quantification used the argument “--l A” (which auto-detects the library type), enabling accurate and bias-aware estimation of transcript abundance. The quantified transcripts were then loaded into RStudio v2024.09.0+375 via tximport v1.30.0 (Soneson et al., 2015). Finally, the *M. polymorpha* Tak-1 reference genome v5.1 revision 1 from marchantia.info (https://marchantia.info) was processed using GenomicFeatures v1.54.4 to generate an annotated transcript database that maps the quantified reads to corresponding transcript IDs in *M. polymorpha* (Lawrence et al., 2013).
+
+## Enrichment Analysis
+
+An upset plot of transcription factor (TF) families shared among different stages of *M. polymorpha* was generated using the annotated reads from the RNA-seq analysis. This plot was created with the ComplexHeatmap package (v2.23.1), with the combination mode set to “Distinct” (Gu et al., 2016).
+
+Gene counts from the annotation were subsequently used to perform gene set enrichment analysis (GSEA) for biological processes within the Gene Ontology (GO) framework, utilizing the GO.db package (v3.19.1) (Calson, 2024). The GO annotation files for *M. polymorpha* were downloaded from [marchantia.info](https://marchantia.info). Fisher’s exact test was used to calculate p-values for the GO analysis, and the Benjamini-Hochberg correction was applied to control the false discovery rate (Benjamini & Hochberg, 1995).
+
+## Transcription Factor Family Selection and Evolutionary Comparative Analysis
+
+To compare TF families across distinct evolutionary groups, TF annotations were obtained from the Plant Transcription Factor Database (PlantTFDB v5.0). This database provides extensive, standardized TF classifications across numerous plant and algal species (Jin et al., 2017), facilitating reliable evolutionary comparisons.
+
+Representative species were selected from key evolutionary transitions spanning green algae through flowering plants, including algae (*Chlorella variabilis* NC64A, *Chlamydomonas reinhardtii*, *Coccomyxa subellipsoidea* C-169, *Micromonas pusilla* CCMP1545, *Ostreococcus lucimarinus*, *Ostreococcus* sp. RCC809, *Ostreococcus tauri*), bryophytes (*Marchantia polymorpha*, *Physcomitrella patens*), a lycophyte (*Selaginella moellendorffii*), gymnosperms (*Picea abies*, *Picea menziesii*, *Picea sitchensis*), and angiosperms (*Arabidopsis thaliana*, *Zea mays*, *Populus trichocarpa*, *Vitis vinifera*). TF family sizes for each species were directly sourced from PlantTFDB.
+
+To visualize TF family distribution, a heatmap was generated using the R package **pheatmap** (Kolde, 2019), clearly identifying conserved TF families and potential lineage-specific expansions or losses. Log₂ fold-changes in TF family sizes across evolutionary transitions (Algae → Liverwort → Moss → Lycophyte → Gymnosperm → Eudicot → Monocot) were calculated and displayed via an additional heatmap (Kolde, 2019), highlighting significant evolutionary shifts.
+
+A stacked bar chart illustrating the proportional representation of the 15 major TF families across evolutionary stages (algae to angiosperms) was created using **ggplot2** (Wickham, 2016). This visualization complemented the heatmaps, providing quantitative insights into TF family dynamics. All TF family analyses were conducted in R (v4.3.1; R Core Team, 2024) using RStudio, with additional R packages **dplyr** and **tidyr** employed.
+
+# Results
+
+## RNA-Seq Processing
+
+After adapter trimming with fastp v0.12.4, the reads were suitable for downstream analysis. The overall sequence length and duplication rate were below 50% (Fig. 1A–1D). The Phred scores of the reads were consistently over 20, with an overall quality peak around a Phred score of 36 (Fig. 1E, 1F). The base pairs were of good quality, displaying an appropriate GC content and a negligible proportion of bases called as N (Fig. 1G, 1H). Less than 1% of the reads were overrepresented, and adapter contamination was below 0.1% (Fig. 1I, 1J). The mapping quality was also robust. The number of uniquely mapped reads exceeded 5,500,000, which is over 85% of the total reads. The mismatch rate was less than 0.5%, indicating that the mapped reads were suitable for downstream analysis (Fig. 1K).
+
+![](Figure1.png){width="5.869792213473316in" height="5.815341207349081in"}
+
+**Figure 1. The Quality Control on Raw Sequence Reads and Mapping Efficiency**
+
+Fig. 1A–1J show the quality control of the raw sequence reads after processing with fastp v0.12.4, fastqc, and multiqc (obtained from file:///Users/jackchiang/Desktop/BMEG524/multiqc_processed/multiqc_report.html). Fig. 1K shows the mapping quality after alignment with STAR 2.7.9a.  
+IM_Tak1 refers to male plants in the immature reproductive stage; IM_Tak2 refers to female plants in the immature reproductive stage; M_Tak1 refers to male plants in the mature reproductive stage; M_Tak2 refers to female plants in the mature reproductive stage; V_Tak1 refers to male plants in the vegetative stage; V_Tak2 refers to female plants in the vegetative stage.
+
+## Transcription Factor Family Comparison in Different Stages of *M. polymorpha*
+
+Most TFs were co-expressed across the different stages, with 258 TFs common to all stages tested (Fig. 2). Female plants in the mature reproductive stage had the highest number of uniquely expressed TFs, with 25 in this group (Fig. 2). The remaining intersections contained a limited number of TFs, with no group comprising more than five TFs (Fig. 2). In the reproductive stage unique to females, predominantly bHLH and MYB TFs were expressed. In contrast, the unique TF expressed in male plants in the immature reproductive stage encoded the protein MpERF19. In the mature reproductive stages of both sexes, two TFs—MpERF23 and MpASLBD10—were uniquely expressed. In the overall reproductive stage (immature and mature, male and female), three TFs (MpbHLH22, MpbHLH34, and MpMYB13) were uniquely expressed.
+
+![](Figure2.png){width="6.267716535433071in" height="2.263888888888889in"}
+
+**Figure 2. Upset Plot of Transcription Factors in 6 Different Stages of *M. polymorpha***
+
+Figure 2 shows the upset plot of TFs in six different stages.  
+IM_Tak1 refers to male plants in the immature reproductive stage; IM_Tak2 refers to female plants in the immature reproductive stage; M_Tak1 refers to male plants in the mature reproductive stage; M_Tak2 refers to female plants in the mature reproductive stage; V_Tak1 refers to male plants in the vegetative stage; V_Tak2 refers to female plants in the vegetative stage.
+
+In the GO analysis plot, the six datasets predominantly shared the same GO terms for biological processes, possibly because many TFs are commonly expressed within the same group (Fig. 3). The shared GO terms with significant enrichment were related to DNA binding and the regulation of proteins through interactions with other proteins or metal ions (Fig. 3). This is predictable since the primary function of TFs is to bind to DNA and regulate transcriptional activities. Additionally, processes such as protein kinase activity, hormone response, and cell cycle regulation were common across all six datasets (Fig. 3). However, certain datasets contained unique biological processes; for example, in the vegetative stage of both male and female plants, zinc ion binding was observed (Fig. 3). This may be because these groups mainly contain more transcripts related to zinc finger TFs, such as the C2H2 family (involved in stress tolerance) or the GATA family (involved in plant development) (Han et al., 2020; Schwechheimer, Schröder & Blaby-Haas, 2022).
+
+![](Figure3.png){width="6.267716535433071in" height="3.888888888888889in"}
+
+## Figure 3. GO Analysis of Transcription Factors in Different Stages of *M. polymorpha*
+
+Figure 3 shows the GO analysis of the TFs in different stages of *M. polymorpha*.  
+IM_Tak1 refers to male plants in the immature reproductive stage; IM_Tak2 refers to female plants in the immature reproductive stage; M_Tak1 refers to male plants in the mature reproductive stage; M_Tak2 refers to female plants in the mature reproductive stage; V_Tak1 refers to male plants in the vegetative stage; V_Tak2 refers to female plants in the vegetative stage.
+
+## Discussion of Transcriptomes
+
+Unlike Sharma, Bhalla, & Singh, we used a reference genome to map raw reads for higher precision and coverage. The use of a reference genome increased the number of mapped reads significantly; while the *de novo* assembly identified approximately 45,000 unique transcripts, the reference-based approach located around 6,000,000 unique transcripts (Sharma, Bhalla, & Singh, 2013). Using a reference genome greatly increased the read counts, thereby reducing the loss of information from the raw reads.
+
+Furthermore, instead of merely counting the number of reads per TF, we performed a more thorough analysis of TF profiles across different stages of *M. polymorpha*. We first identified both commonly and uniquely expressed TFs across all six stages. Although most TFs were commonly expressed, certain stages exhibited unique TF expression. For example, in the reproductive stage, bHLH and MYB TF families were predominantly expressed (Fig. X). Both families are large and functionally diverse, playing roles in growth and development, metabolism, hormone signaling, and responses to biotic and abiotic stress (Wu et al., 2024). In the vegetative stage, zinc finger TFs appear to dominate, with families in this group highly expressed (Fig. X, Fig. X). Zinc finger TFs are also an extensive family, with roles in stress tolerance and development (Han et al., 2020; Schwechheimer, Schröder & Blaby-Haas, 2022). These examples indicate that although similar biological processes occur in different stages, the distinct internal and external environments require different sets of TFs. Through this analysis, we not only unraveled the TF profiles in different stages but also predicted which TFs are more prevalent in each stage.
+
+Unfortunately, the public dataset contains only one sample per condition, without any replicates. Consequently, the results we obtained cannot be claimed as statistically significant, even though generating pseudo-replicates for further analysis is possible.
+
+![](Figure4.png){width="4.148559711286089in" height="6.92380249343832in"}
+
+**Figure 4. Comparative Distribution of Gene/Transcription Factor Families Across Multiple Plant Species**
+
+Each column corresponds to a different plant or algal species (Chlorella variabilis NC64A [Cnc], Chlamydomonas reinhardtii [Cre], Coccomyxa subellipsoidea C-169 [Csc], Micromonas pusilla CCMP1545 [Mpu], Ostreococcus lucimarinus [Olu], Ostreococcus sp. RCC809 [Orc], Ostreococcus tauri [Ota], Marchantia polymorpha [Mpo], Physcomitrella patens [Ppa], Selaginella moellendorffii [Smo], Picea abies [Pab], Picea menziesii [Pme], Picea sitchensis [Psi], Oryza sativa subsp. indica [Osi], Zea mays [Zma], Arabidopsis thaliana [Ath], Populus trichocarpa [Ptr], Vitis vinifera [Vvi]), arranged roughly in evolutionary order from algae to angiosperms. Each row indicates a distinct transcription factor (TF) family (e.g., WRKY, MYB, GRF, ARF, etc.). Gaps in the bars indicate the absence of a TF family in one or more species.
+
+![](Figure5.png){width="6.267716535433071in" height="5.222222222222222in"}
+
+**Figure 5.** Heatmap showing the log₂ fold change in transcription factor family sizes across major plant evolutionary transitions (Algae → Liverwort → Moss → Lycophyte → Gymnosperm → Eudicot → Monocot). Warmer (red) cells indicate expansion, cooler (blue) cells indicate contraction, white signifies minimal change, and gray denotes missing data or an uncomputable ratio.
+
+**Transcription Family Results**
+
+Our analysis of transcription factor (TF) families across plants and algae reveals patterns that illustrate the evolutionary history of these genes and their roles in shaping plant adaptation to terrestrial environments. 
+
+**TF Family Distribution Across Plant Lineages (Figure 4)**
+
+Figure 4 summarizes the distribution of TF families over evolutionary time. Certain families—such as ARF, Trihelix, GRAS, GRF, and MIKC_MADS—emerged with the initial colonization of land, as evidenced in early-diverging lineages like liverworts (*Marchantia polymorpha*) and mosses (*Physcomitrella patens*). Their appearance indicates a critical role in helping plants cope with terrestrial conditions.
+
+In contrast, families such as bZIP, bHLH, MYB-related, ERF, and GATA are present across nearly all groups—from algae to flowering plants—highlighting their ancient origins and continued importance. This conservation suggests that these families rapidly acquired essential functions that remained vital throughout subsequent evolutionary stages. For bHLH, previous research by Carretero-Paulet et al. (2010) examined the stability and significance of the bHLH family throughout the plant kingdom.
+
+Finally, two TF families, such as SAP and GeBP, appear only from lycophytes onward. The GeBP family, consistently present from lycophytes to flowering plants, likely played a crucial role in the evolution of advanced vascular structures (Wu et al., 2024).
+
+**Patterns of TF Family Expansion and Contraction (Figure 5)**
+
+Notably, in Figure 5, MIKC_MADS, Trihelix, and bHLH are shown to expand during the transition from algae to liverworts. This supports the idea that early land plants developed new genes or duplicated existing ones to adapt to terrestrial environments (Shiu et al., 2005).
+
+Families like NAC and MYB expanded during later evolutionary stages, such as the transition from mosses to lycophytes or from gymnosperms to flowering plants. These expansions may be associated with whole-genome duplications that introduce greater complexity to plant genomes (Vanneste et al., 2014).
+
+Some TF families experienced periods of contraction. For example, the Trihelix and HD-ZIP families contracted during the transition from liverworts to mosses, while MIKC_MADS genes decreased between gymnosperms and eudicots, suggesting that evolution sometimes favored streamlining gene sets.
+
+**Quantitative Changes in TF Family Abundance (Figure 6)**
+
+From algae to liverworts, there's a notable decrease in the abundance of the C3H family and a slight reduction in MYB-related genes, while the bHLH and Trihelix families expanded significantly—likely assuming greater roles in terrestrial adaptation. These proportional shifts agree with the trends observed in Figure 6 and indicate that certain TF families became increasingly important during the water-to-land transition.
+
+![](Figure6.png){width="6.267716535433071in" height="4.472222222222222in"}
+
+**Figure 6.** Stacked bar chart illustrating the relative abundance (percentage) of 15 transcription factor (TF) families in representative plant/algal species spanning key evolutionary groups. Each bar depicts the proportion of TF families for one species, grouped by broader phylogenetic category. The species abbreviations (in order shown) are: Cre = *Chlamydomonas reinhardtii* (alga); Mpo = *Marchantia polymorpha* (liverwort); Ppa = *Physcomitrella patens* (moss); Smo = *Selaginella moellendorffii* (lycophyte); Pab = *Picea abies* (gymnosperm); Ath = *Arabidopsis thaliana* (eudicot); Zma = *Zea mays* (monocot). Reductions in C3H and MYB-related TFs from algae to *M. polymorpha* contrast with substantial expansions in bHLH and Trihelix families, indicating shifts in TF composition as plants adapted to terrestrial environments.
+
+**Summary**
+
+Our figures illustrate how TF family evolution involved early innovations and later refinements. Early gene duplications in MIKC_MADS, Trihelix, and GRAS likely equipped ancestral plants with the genetic tools necessary to manage terrestrial stresses. Broadly conserved families like bHLH and bZIP reflect a balance between preserving essential functions and facilitating new adaptations. These molecular innovations provide plants with the flexibility required to colonize and thrive in diverse terrestrial habitats.
+
+# Conclusion
+
+In this project, we reanalyzed a public dataset concerning the transcript profiles of TFs in six different stages of *M. polymorpha*. We found that using a reference genome greatly increased the mappability of raw reads, thereby reducing information loss. We also plotted the potential relationships among certain TF families across the different stages of *M. polymorpha* using an upset plot and subsequent GO analysis—an aspect not fully investigated by the original authors.
+
+Unfortunately, since the public dataset lacks replicates, the results we obtained cannot be claimed as statistically significant, even though generating pseudo-replicates for further analysis is possible.
+
+Nonetheless, by reanalyzing the public data generated by Sharma, Bhalla, & Singh, we achieved higher coverage of TF activity, reconstructed the emergence of TFs across plant lineages from red and green algae to flowering plants, and uncovered potential relationships between TF families and various developmental stages of *M. polymorpha*. Generating replicates—even pseudo-replicates—could enhance statistical significance and allow for additional analyses (including differential expression analysis) to provide a more comprehensive understanding of both the evolutionary and physiological significance of various TF families.
+
+In summary, our study confirms that improved mapping using a reference genome not only recovers more transcript information but also provides novel insights into TF family evolution that were not fully explored in the original work. Future efforts incorporating replicates and advanced statistical analyses will further enhance our understanding of the complex regulatory networks that have shaped plant adaptation throughout evolutionary history.
+
+# References
+
+1.  Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: A practical and powerful approach to multiple testing. Journal of the Royal Statistical Society: Series B, 57(1), 289–300.
+
+2.  Bowman, J. L., Arteaga-Vazquez, M., Berger, F., Briginshaw, L. N., Carella, P., Aguilar-Cruz, A., Davies, K. M., Dierschke, T., Dolan, L., Dorantes-Acosta, A. E., Fisher, T. J., Flores-Sandoval, E., Futagami, K., Ishizaki, K., Jibran, R., Kanazawa, T., Kato, H., Kohchi, T., Levins, J., Lin, S. S., ... Zachgo, S. (2022). The renaissance and enlightenment of Marchantia as a model system. The Plant Cell, 34(10), 3512–3542. <https://doi.org/10.1093/plcell/koac219>
+
+3.  Carlson, M. (2024). GO.db: A set of annotation maps describing the entire Gene Ontology (Version 3.19.1) [R package].
+
+4.  Carretero-Paulet, L., Galstyan, A., Roig-Villanova, I., Martínez-García, J. F., Bilbao-Castro, J. R., & Robertson, D. L. (2010). *Genome-Wide Classification and Evolutionary Analysis of the bHLH Family of Transcription Factors in Arabidopsis, Poplar, Rice, Moss, and Algae*. Plant Physiology, 153(3), 1398–1412. <https://doi.org/10.1104/pp.110.153593>
+
+5.  Chen, S., Zhou, Y., Chen, Y., & Gu, J. (2018). fastp: An ultra-fast all-in-one FASTQ preprocessor. Bioinformatics, 34, i884–i890.
+
+6.  Dobin, A., Davis, C. A., Schlesinger, F., Drenkow, J., Zaleski, C., Jha, S., Batut, P., Chaisson, M., & Gingeras, T. R. (2013). STAR: Ultrafast universal RNA-seq aligner. Bioinformatics, 29, 15–21.
+
+7.  Fisher, R. A. (1922). On the interpretation of χ² from contingency tables, and the calculation of P. Journal of the Royal Statistical Society, 85(1), 87–94.
+
+8.  Gu, Z., Gu, L., Eils, R., Schlesner, M., & Brors, B. (2016). Complex heatmaps reveal patterns and correlations in multidimensional genomic data. Bioinformatics, 32(18), 2847–2849.
+
+9.  Han, G., Lu, C., Guo, J., Qiao, Z., Sui, N., Qiu, N., & Wang, B. (2020). C2H2 zinc finger proteins: Master regulators of abiotic stress responses in plants. Frontiers in Plant Science, 11, 115. <https://doi.org/10.3389/fpls.2020.00115>
+
+10. Jin, J., Tian, F., Yang, D. C., Meng, Y. Q., Kong, L., Luo, J., & Gao, G. (2017). PlantTFDB 4.0: Toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Research, 45(D1), D1040–D1045. <https://doi.org/10.1093/nar/gkw982>
+
+11. Kolde, R. (2019). pheatmap: Pretty heatmaps (Version 1.0.12) [R package]. Retrieved from <https://github.com/raivokolde/pheatmap>
+
+12. Lawrence, M., Huber, W., Pagès, H., Aboyoun, P., Carlson, M., Gentleman, R., Morgan, M. T., & Carey, V. J. (2013). Software for computing and annotating genomic ranges (A. Prlic, Ed.). PLoS Computational Biology, 9, e1003118.
+
+13. Movahedi, A., Kadkhodaei, S., & Yang, L. (2024). Editorial: Transcriptional regulation and posttranslational modifications in plant growth and development under abiotic stresses. Frontiers in Plant Science, 15, 1454335. <https://doi.org/10.3389/fpls.2024.1454335>
+
+14. Panchy, N., Lehti-Shiu, M., & Shiu, S. H. (2016). Evolution of gene duplication in plants. Plant Physiology, 171(4), 2294–2316. <https://doi.org/10.1104/pp.16.00523>
+
+15. Patro, R., Duggal, G., Love, M. I., Irizarry, R. A., & Kingsford, C. (2017). Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods, 14, 417–419.
+
+16. R Core Team. (2024). R: A language and environment for statistical computing. R Foundation for Statistical Computing. Retrieved from [https://www.R-project.org/](https://www.r-project.org/)
+
+17. Schwechheimer, C., Schröder, P. M., & Blaby-Haas, C. E. (2022). Plant GATA factors: Their biology, phylogeny, and phylogenomics. Annual Review of Plant Biology, 73, 123–148. <https://doi.org/10.1146/annurev-arplant-072221-092913>
+
+18. Sharma, N., Bhalla, P. L., & Singh, M. B. (2013). Transcriptome-wide profiling and expression analysis of transcription factor families in a liverwort, Marchantia polymorpha. BMC Genomics, 14, 915. <https://doi.org/10.1186/1471-2164-14-915>
+
+19. Soneson, C., Love, M. I., & Robinson, M. D. (2015). Differential analyses for RNA-seq: Transcript-level estimates improve gene-level inferences. F1000Research, 4, 1521.
+
+20. Wang, L., Wan, M. C., Liao, R. Y., Xu, J., Xu, Z. G., Xue, H. C., Mai, Y. X., & Wang, J. W. (2023). The maturation and aging trajectory of Marchantia polymorpha at single-cell resolution. Developmental Cell, 58(15), 1429–1444.e6. <https://doi.org/10.1016/j.devcel.2023.05.014>
+
+21. Weng, J. K., & Chapple, C. (2010). The origin and evolution of lignin biosynthesis. The New Phytologist, 187(2), 273–285. <https://doi.org/10.1111/j.1469-8137.2010.03327.x>
+
+22. Wickham, H. (2016). ggplot2: Elegant graphics for data analysis. Springer-Verlag New York. Retrieved from <https://ggplot2.tidyverse.org>
+
+23. Wu, J., Liu, R., Xie, Y., Zhao, S., Yan, M., Sun, N., Zhan, Y., Li, F., Yu, S., Feng, Z., & Li, L. (2024). *Association of GhGeBP genes with fiber quality and early maturity related traits in upland cotton*. BMC Genomics, 25(1), 1058. <https://doi.org/10.1186/s12864-024-10983-y>
+
+24. Wu, X., Xia, M., Su, P., Zhang, Y., Tu, L., Zhao, H., Gao, W., Huang, L., & Hu, Y. (2024). MYB transcription factors in plants: A comprehensive review of their discovery, structure, classification, functional diversity, and regulatory mechanism. International Journal of Biological Macromolecules, 282(Pt 2), 136652. <https://doi.org/10.1016/j.ijbiomac.2024.136652>
+
+25. Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L. D., François, R., ... Yutani, H. (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686. <https://doi.org/10.21105/joss.01686>
+
+26. Vanneste, K., Baele, G., Maere, S., & Van de Peer, Y. (2014). Analysis of 41 plant genomes supports a wave of successful genome duplications in association with the Cretaceous-Paleogene boundary. Genome Research, 24(8), 1334–1347. <https://doi.org/10.1101/gr.168997.113>
+
+
+
+# Appendix
+
+```{=latex}
+\begingroup
+\small
+```
+
+## Appendix A: RNA-seq QC and Alignment
+```{r, echo=FALSE, results='asis', eval=TRUE}
+child_code <- readLines("New/01_RNAseq_QC_and_Alignment.Rmd", warn = FALSE)
+combined_text <- paste(child_code, collapse = "\n")
+knitr::asis_output(paste0("```r\n", combined_text, "\n```"))
+```
+
+
+## Appendix B: Annotation Expression
+```{r, echo=FALSE, results='asis', eval=TRUE}
+child_code <- readLines("New/02_TF_Annotation_Expression.Rmd", warn = FALSE)
+knitr::asis_output(paste0("```r\n", paste(child_code, collapse="\n"), "\n```"))
+```
+
+
+## Appendix C: GO Analysis
+```{r, echo=FALSE, results='asis', eval=TRUE}
+child_code <- readLines("New/03_GO_Analysis_and_Advanced_Plot.Rmd", warn = FALSE)
+knitr::asis_output(paste0("```r\n", paste(child_code, collapse="\n"), "\n```"))
+```
+
+
+
+## Appendix D: Visualizations
+```{r, echo=FALSE, results='asis', eval=TRUE}
+child_code <- readLines("New/04_Advanced_Visualizations.Rmd", warn = FALSE)
+knitr::asis_output(paste0("```r\n", paste(child_code, collapse="\n"), "\n```"))
+```
+
+
